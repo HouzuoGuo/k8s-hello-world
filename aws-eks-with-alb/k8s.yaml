@@ -1,0 +1,51 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      pod-app: my-app
+  template:
+    metadata:
+      labels:
+        pod-app: my-app
+    spec:
+      containers:
+        - name: app-container
+          imagePullPolicy: Always
+          image: hzgl/k8s-hello-world
+          ports:
+            - containerPort: 20000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-svc
+spec:
+  ports:
+    - port: 80
+      targetPort: 20000
+      protocol: TCP
+  type: ClusterIP
+  selector:
+    pod-app: my-app
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: app-public-ingress
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /*
+            backend:
+              serviceName: app-svc
+              servicePort: 80
